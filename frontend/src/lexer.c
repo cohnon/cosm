@@ -250,5 +250,6 @@ char *token_string(Token tok) {
         case TOK_CALL: return "call";
         case TOK_RET: return "ret";
         case TOK_ENTRY_POINT: return "entry_point";
+        default: return "<unhandled>";
     }
 }
