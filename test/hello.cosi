@@ -1,0 +1,6 @@
+@puts (ptr) -> i32
+
+[entry_point "C"]
+@main unit -> unit
+    %1 = call @puts "hello, world.\n\0"
+    ret

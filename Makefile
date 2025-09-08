@@ -1,12 +1,15 @@
 CC = gcc -std=c17
 FLAGS = -g -Wall -Wextra -Werror -pedantic
-INCLUDES = -Iinclude -Isrc
+INCLUDE = -Ishared
 
 BUILD_DIR = build
-BIN = $(BUILD_DIR)/cosm
+BIN = $(BUILD_DIR)/cosi
 
-CFILES = $(wildcard src/*.c src/*/*.c)
-OFILES = $(patsubst %.c, $(BUILD_DIR)/%.o, $(CFILES))
+FE_SRC = $(wildcard frontend/src/*.c)
+SH_SRC = $(wildcard shared/*.c)
+
+SRCS = $(FE_SRC) $(SH_SRC)
+OBJS = $(patsubst %.c, $(BUILD_DIR)/%.o, $(SRCS))
 
 # commands
 .Phony: all
@@ -17,12 +20,9 @@ clean:
 	rm -r $(BUILD_DIR)
 
 
-$(BIN): $(OFILES)
+$(BIN): $(OBJS)
 	$(CC) $^ -o $@
-
-$(TEST): $(TEST_CFILES) $(BIN)
-	$(CC) $(FLAGS) $(INCLUDES) $^ -o $@
 
 $(BUILD_DIR)/%.o: %.c
 	mkdir -p $(@D)
-	$(CC) -c $(FLAGS) $(INCLUDES) $^ -o $@
+	$(CC) -c $(FLAGS) $(INCLUDE) $^ -o $@

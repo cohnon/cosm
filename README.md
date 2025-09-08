@@ -1,3 +1,3 @@
-# cosm
+# cosi
 
-The Cosy Machine
+The Cosy IR for the Cosy Machine
