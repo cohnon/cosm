@@ -3,7 +3,7 @@ FLAGS = -g -Wall -Wextra -Werror -pedantic
 INCLUDE = -Ishared
 
 BUILD_DIR = build
-BIN = $(BUILD_DIR)/cosi
+BIN = $(BUILD_DIR)/cosm
 
 FE_SRC = $(wildcard frontend/src/*.c)
 SH_SRC = $(wildcard shared/*.c)

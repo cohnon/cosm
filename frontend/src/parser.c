@@ -1,59 +1,31 @@
 #include "parser.h"
 #include "lexer.h"
 
+#include "cosm.h"
 #include <assert.h>
 #include <stdint.h>
-
-#define ITEM_NAME_MAX_LEN ((1<<7) - 1)
-
-typedef enum {
-    TYPE_I8,
-    TYPE_I16,
-    TYPE_I32,
-    TYPE_I64,
-
-    TYPE_WORD,
-    TYPE_HALF,
-
-    TYPE_F32,
-    TYPE_F64,
-
-    TYPE_REF,
-
-    TYPE_USER,
-} TypeKind;
+#include <string.h>
 
 typedef struct {
-    TypeKind kind;
-    int elems;
-} Type;
+    TokenArray toks;
+    FILE *out;
+} Parser;
 
-typedef struct {
-    char name[ITEM_NAME_MAX_LEN];
+static void write_header(Parser *psr) {
+    CosmHeader hdr;
+    memcpy(&hdr.magic, COSM_MAGIC, sizeof(hdr.magic));
+    hdr.version = COSM_VERSION;
+    hdr.size = 0;
+    hdr.n_imports = 0;
+    hdr.n_exports = 0;
 
-    Type *ins;
-    Type *outs;
+    fwrite(&hdr, sizeof(hdr), 1, psr->out);
+}
 
-    int ins_len;
-    int outs_len;
-} FuncSig;
+void parse(TokenArray toks, FILE *out) {
+    Parser psr;
+    psr.toks = toks;
+    psr.out = out;
 
-typedef struct {
-    char name[ITEM_NAME_MAX_LEN];
-    Type type;
-} Variable;
-
-typedef struct {
-    Type *types;
-    int types_len;
-
-    FuncSig *funcs;
-    int funcs_len;
-
-    Variable *vars;
-    int vars_len;
-} Context;
-
-void parse(TokenArray toks) {
-    (void)toks;
+    write_header(&psr);
 }

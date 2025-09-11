@@ -2,7 +2,8 @@
 #define PARSER_H
 
 #include "lexer.h"
+#include <stdio.h>
 
-void parse(TokenArray toks);
+void parse(TokenArray toks, FILE *out);
 
 #endif

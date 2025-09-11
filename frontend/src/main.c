@@ -22,5 +22,7 @@ int main(int argc, char **argv) {
     }
     fprintf(stderr, "\n");
 
-    parse(toks);
+    FILE *out = fopen("test.cosm", "wb");
+    parse(toks, out);
+    fclose(out);
 }

@@ -6,8 +6,8 @@ header:
 ## Header
 
 | magic number | 4 bytes ("cosi") |
-| version      | 4 bytes (0x00)   |
-| modules      | N bytes          |
+| version      | 4 bytes          |
+| no. of items | 4 bytes          |
 
 ## Items
 
