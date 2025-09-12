@@ -13,23 +13,6 @@ typedef uint16_t u16;
 typedef uint32_t u32;
 typedef uint64_t u64;
 
-typedef enum CosmTypeKind {
-    TYPE_I8,
-    TYPE_I16,
-    TYPE_I32,
-    TYPE_I64,
-
-    TYPE_WORD,
-    TYPE_HALF,
-
-    TYPE_F32,
-    TYPE_F64,
-
-    TYPE_REF,
-
-    TYPE_USER,
-} CosmTypeKind;
-
 typedef enum CosmSectionType {
   COSM_SEC_CUSTOM,
 
@@ -43,38 +26,69 @@ typedef enum CosmSectionType {
 
   COSM_SEC_CODE,
   COSM_SEC_DATA,
+  COSM_SEC_TYPEDATA,
 } CosmSectionType;
 
+typedef u8 CosmItemType;
 enum CosmItemType {
   COSM_ITEM_FUNCTION,
   COSM_ITEM_OBJECT,
+  COSM_ITEM_TYPE,
 };
-typedef u8 CosmItemType;
 
-enum CosmCallConv {
-  COSM_CALLCONV_COSM,
-  COSM_CALLCONV_C,
-};
-typedef u8 CosmCallConv;
-
-typedef struct CosmImport {
+typedef struct CosmExport {
   CosmItemType type;
-  CosmCallConv callconv;
+  u32 flags : 24;
 
-  u16 pad;
-
-  u32 idx;
+  union {
+    u32 func;
+    u32 obj;
+    u32 ty;
+  };
 
   u32 sym_pos;
   u32 sym_len;
-} CosmImport;
+} CosmExport;
+
+enum CosmTypeKind {
+    TYPE_I8,
+    TYPE_I16,
+    TYPE_I32,
+    TYPE_I64,
+
+    TYPE_WORD,
+    TYPE_HALF,
+
+    TYPE_F32,
+    TYPE_F64,
+
+    TYPE_REF,
+
+    TYPE_TUPLE,
+    TYPE_UNION,
+};
+typedef u8 CosmTypeKind;
+
+typedef struct CosmType {
+  u64 typedata;
+} CosmType;
+
+typedef struct CosmFunction {
+  u32 type;
+  u64 code;
+} CosmFunction;
+
+typedef struct CosmObject {
+  u32 type;
+  u64 data;
+} CosmObject;
 
 typedef struct CosmHeader {
   char magic[sizeof(COSM_MAGIC)];
   u32  version;
   u32  size;
-  u32  n_imports;
-  u32  n_exports;
+  u32  imports_len;
+  u32  exports_len;
 } CosmHeader;
 
 #endif
