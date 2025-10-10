@@ -1,34 +1,40 @@
-# Cosi Binary Format (v0)
+# Cosm Binary Format (v0)
 
-A cosi binary file represents a single module. It starts with the following
+A cosm binary file represents a single module. It starts with the following
 header:
+
+## Module
+
+| header   | Header     |
+| sections | \[Section] |
 
 ## Header
 
-| magic number | 4 bytes ("cosi") |
-| version      | 4 bytes          |
-| no. of items | 4 bytes          |
+| magic number | "cosm"       |
+| version      | u32 (0)      |
+| name         | ref .strings |
 
-## Items
+## Section
 
-A module is made up of a list of items. Each items is prefixed with an
-item type (1 byte), and its size in bytes (4 bytes). Items are referenced by
-4 bytes in the order they are declared.
+| type     | u32        |
+| size     | word       |
+| contents | bytes      |
 
-| Item Type | Description |
-| 0x00      | Custom      |
-| 0x01      | Function    |
-| 0x02      | Global      |
+## Import
 
-### Functions
+| module name | ref .names |
+| item name   | ref .names |
+| item type   | idx .types |
 
-Functions take N input and M output parameters. Each parameter is one of the
-primitive types.
+## Export
 
-| name    | string          |
-| inputs  | \[type]         |
-| outputs | \[type]         |
-| body    | \[instructions] |
+| name | ref .names |
+| idx  | idx .items |
+
+## Item
+
+| type     | idx .types |
+| contents | ref .??    |
 
 ## Types
 
@@ -36,20 +42,21 @@ primitive types.
 
 `i32 | i64`
 
-Both signed and unsigned integers are represented the same at the type level
-and their representation is based on the operations
-
 ### Floats
 
 `f32 | f64`
 
-### References
+### Pointers
 
-`ref | wref`
+`*<ty>`
 
 ### Tuples
 
-`tupN`
+`(<ty>, ..)`
+
+### Functions
+
+`fn <ty> -> <ty>`
 
 ## Instructions
 
@@ -75,3 +82,4 @@ and their representation is based on the operations
 | POKE <type> <from> <offset> <val> | 0x53 | Write a value from memory at an offset                                   |
 | MOV <from> <to>
 | STACK <size>                      | 0x54 | Allocate space on the stack                                              |
+

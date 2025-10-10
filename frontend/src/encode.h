@@ -1,8 +1,9 @@
 #ifndef ENCODE_H
 #define ENCODE_H
 
-#include "parser.h"
+#include "module.h"
+#include <stdio.h>
 
-void encode_module(Module *mod, FILE *out);
+void encode(FILE *out, Module *mod);
 
 #endif

@@ -33,7 +33,7 @@ void array_init_untyped(void *any_arr, size_t item_sz, size_t init_cap) {
     Array *arr = any_arr;
 
     assert(item_sz > 0);
-    assert(init_cap >= 8);
+    assert(init_cap >= 4);
 
     arr->items = NULL;
     arr->len = 0;

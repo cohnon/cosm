@@ -1,3 +1,4 @@
+#include "encode.h"
 #include "io.h"
 #include "lexer.h"
 #include "parser.h"
@@ -22,7 +23,12 @@ int main(int argc, char **argv) {
     }
     fprintf(stderr, "\n");
 
+    Module *mod = parse(toks);
+
+    fprintf(stderr, "*** module ***\n");
+    print_module(stderr, mod);
+
     FILE *out = fopen("test.cosm", "wb");
-    parse(toks, out);
+    encode(out, mod);
     fclose(out);
 }

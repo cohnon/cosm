@@ -5,10 +5,12 @@
 
 typedef enum {
     TOK_INVALID,
+    TOK_EOF,
 
     // values
     TOK_SYMBOL,   // @name
-    TOK_VARIABLE, // %1
+    TOK_VARIABLE, // %var
+    TOK_LABEL,    // :label
     TOK_NUMBER,
     TOK_STRING,
 
@@ -21,20 +23,27 @@ typedef enum {
     TOK_ARROW,
     TOK_EQUAL,
     TOK_PLUS,
+    TOK_STAR,
+    TOK_X,
 
     // keywords
+    TOK_FOREIGN,
+    TOK_GLOBAL,
+    TOK_END,
+    TOK_REF,
+
     TOK_UNIT,
     TOK_NEVER,
+    TOK_I8,
     TOK_I32,
     TOK_HALF,
     TOK_WORD,
-    TOK_PTR,
+    TOK_FN,
 
     TOK_ADD,
+    TOK_IMM,
     TOK_CALL,
     TOK_RET,
-
-    TOK_ENTRY_POINT,
 } TokenType;
 
 typedef struct {
@@ -47,5 +56,7 @@ ARRAY_DECL(TokenArray, Token);
 
 TokenArray lex(char *str, int len);
 char *token_string(Token tok);
+char *token_string_from_type(TokenType type);
+#define TOK_FMT(tok) (int)(tok).len, (tok).src
 
 #endif

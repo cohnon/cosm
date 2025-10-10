@@ -1,32 +1,76 @@
+#include "cosm.h"
 #include "encode.h"
+#include <assert.h>
+#include <stdint.h>
 
-#include <string.h>
+typedef struct Encoder {
+    FILE   *out;
+    Module *mod;
+} Encoder;
 
-static void write_i32(FILE *out, int32_t val) {
-    fwrite(&val, sizeof(val), 1, out);
+void encode_u32(Encoder *enc, uint32_t val) {
+    fwrite(&val, sizeof(val), 1, enc->out);
 }
 
-static void write_str(FILE *out, char *val, size_t len) {
-    fwrite(val, 1, len, out);
+void encode_word(Encoder *enc, CosmWord ref) {
+    fwrite(&ref, sizeof(ref), 1, enc->out);
 }
 
-static void write_header(FILE *out) {
-    CosmHeader hdr;
-    memcpy(&hdr.magic, COSM_MAGIC, sizeof(hdr.magic));
-    hdr.version = COSM_VERSION;
-    hdr.size = 0;
-    hdr.imports_len = 0;
-    hdr.exports_len = 0;
-
-    write_str(out, hdr.magic, sizeof(hdr.magic));
-    write_i32(out, hdr.version);
-    write_i32(out, hdr.size);
-    write_i32(out, hdr.imports_len);
-    write_i32(out, hdr.exports_len);
+void encode_idx(Encoder *enc, CosmIdx idx) {
+    fwrite(&idx, sizeof(idx), 1, enc->out);
 }
 
-void encode_module(Module *mod, FILE *out) {
-  write_header(out);
+void write_str(Encoder *enc, char *val, size_t len) {
+    fwrite(val, 1, len, enc->out);
+}
 
-  (void)mod;
+void encode_bytes(Encoder *enc, unsigned char *bytes, size_t len) {
+    fwrite(bytes, len, 1, enc->out);
+}
+
+void encode_func(Encoder *enc, Item *item) {
+    encode_u32(enc, item->ty->idx);
+}
+
+void encode_imports(Encoder *enc, Import *import) {
+    encode_word(enc, import->mod_name);
+    encode_word(enc, import->item_name);
+    encode_idx(enc, import->item_type);
+}
+
+void encode_exports(Encoder *enc, Export *export) {
+    encode_word(enc, export->mod_name);
+    encode_idx(enc, export->item_type);
+}
+
+void encode_functions(Encoder *enc, FunctionArray *funcs) {
+    for (int i = 0; i < funcs->len; i++) {
+        encode_word(enc, funcs->items[i].type);
+    }
+}
+
+void encode_header(Encoder *enc) {
+    Module *mod = enc->mod;
+
+    unsigned char magic[] = COSM_MAGIC;
+    encode_bytes(enc, magic, sizeof(magic));
+
+    encode_u32(enc, 0x0); // version
+    encode_word(enc, 0x0); // name (no name yet)
+
+    encode_idx(enc, mod->imports.len);
+    encode_idx(enc, mod->exports.len);
+}
+
+void encode(FILE *out, Module *mod) {
+    Encoder enc;
+    enc.out = out;
+    enc.mod = mod;
+
+    encode_header(&enc);
+
+    for (int i = 0; i < mod->items.len; i++) {
+        Item *item = mod->items.items[i];
+        encode_item(&enc, item);
+    }
 }

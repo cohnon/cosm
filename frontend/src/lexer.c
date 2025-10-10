@@ -55,16 +55,24 @@ static TokenType get_keyword_type(char *keyword, size_t len) {
         return type; \
     } else
 
-    CASE("never", TOK_NEVER)
+    CASE("x", TOK_X)
+    CASE("foreign", TOK_FOREIGN)
+    CASE("global", TOK_GLOBAL)
+    CASE("end", TOK_END)
+    CASE("ref", TOK_REF)
+
     CASE("unit", TOK_UNIT)
+    CASE("never", TOK_NEVER)
+    CASE("i8", TOK_I8)
     CASE("i32", TOK_I32)
     CASE("half", TOK_HALF)
     CASE("word", TOK_WORD)
-    CASE("ptr", TOK_PTR)
+    CASE("fn", TOK_FN)
+
     CASE("add", TOK_ADD)
+    CASE("imm", TOK_IMM)
     CASE("call", TOK_CALL)
     CASE("ret", TOK_RET)
-    CASE("entry_point", TOK_ENTRY_POINT)
 
     return TOK_INVALID;
 }
@@ -86,7 +94,9 @@ static void lex_comment(Lexer *lxr) {
 }
 
 static void lex_symbol(Lexer *lxr) {
-    while (!whitespace(current_character(lxr))) {
+    lxr->src_idx += 1;
+
+    while (alphanumeric(current_character(lxr))) {
         lxr->src_idx += 1;
     }
 
@@ -94,11 +104,21 @@ static void lex_symbol(Lexer *lxr) {
 }
 
 static void lex_variable(Lexer *lxr) {
-    while (!whitespace(current_character(lxr))) {
+    lxr->src_idx += 1;
+
+    while (alphanumeric(current_character(lxr))) {
         lxr->src_idx += 1;
     }
 
     new_token(lxr, TOK_VARIABLE);
+}
+
+static void lex_label(Lexer *lxr) {
+    lxr->src_idx += 1;
+
+    while (!alphanumeric(current_character(lxr))) {
+        lxr->src_idx += 1;
+    }
 }
 
 static void lex_string(Lexer *lxr) {
@@ -169,12 +189,20 @@ TokenArray lex(char *src, int src_len) {
                 lex_single(&lxr, TOK_COMMA);
                 break;
 
+            case '*':
+                lex_single(&lxr, TOK_STAR);
+                break;
+
             case '@':
                 lex_symbol(&lxr);
                 break;
 
             case '%':
                 lex_variable(&lxr);
+                break;
+
+            case ':':
+                lex_label(&lxr);
                 break;
 
             case '"':
@@ -222,16 +250,24 @@ TokenArray lex(char *src, int src_len) {
         }
     }
 
+    new_token(&lxr, TOK_EOF);
+
     return lxr.toks;
 }
 
 char *token_string(Token tok) {
-    switch (tok.type) {
+    return token_string_from_type(tok.type);
+}
+
+char *token_string_from_type(TokenType type) {
+    switch (type) {
         case TOK_INVALID: return "<invalid>";
+        case TOK_EOF: return "<eof>";
         case TOK_SYMBOL: return "@sym";
+        case TOK_VARIABLE: return "%var";
         case TOK_NUMBER: return "<num>";
         case TOK_STRING: return "<str>";
-        case TOK_VARIABLE: return "%var";
+        case TOK_LABEL: return ":label";
         case TOK_PAREN_OPEN: return "(";
         case TOK_PAREN_CLOSE: return ")";
         case TOK_BRACKET_OPEN: return "[";
@@ -240,16 +276,23 @@ char *token_string(Token tok) {
         case TOK_ARROW: return "->";
         case TOK_EQUAL: return "=";
         case TOK_PLUS: return "+";
-        case TOK_NEVER: return "never";
+        case TOK_STAR: return "*";
+        case TOK_X: return "x";
+        case TOK_FOREIGN: return "foreign";
+        case TOK_GLOBAL: return "global";
+        case TOK_END: return "end";
+        case TOK_REF: return "ref";
         case TOK_UNIT: return "unit";
+        case TOK_NEVER: return "never";
+        case TOK_I8: return "i8";
         case TOK_I32: return "i32";
         case TOK_HALF: return "half";
         case TOK_WORD: return "word";
-        case TOK_PTR: return "ptr";
+        case TOK_FN: return "fn";
         case TOK_ADD: return "add";
+        case TOK_IMM: return "imm";
         case TOK_CALL: return "call";
         case TOK_RET: return "ret";
-        case TOK_ENTRY_POINT: return "entry_point";
         default: return "<unhandled>";
     }
 }
