@@ -6,8 +6,7 @@
 #define COSM_MAGIC ("cosm")
 #define COSM_VERSION (0)
 
-typedef uint64_t COSM_Word;
-typedef uint32_t COSM_Idx;
+typedef uint64_t COSM_Ref;
 
 typedef enum COSM_SecType {
     COSM_SEC_CUSTOM = 0x00,
@@ -37,11 +36,16 @@ typedef enum COSM_Type {
     COSM_TYPE_PTR,
     COSM_TYPE_ARRAY,
     COSM_TYPE_SLICE,
-    COSM_TYPE_FUNC,
 
     COSM_TYPE_TUP,
     COSM_TYPE_UNION,
-} CosmType;
+
+    COSM_TYPE_FUNC,
+
+    COSM_TYPE_MUT,
+
+    COSM_TYPE_TYPE,
+} COSM_Type;
 
 typedef enum COSM_InstrType {
     COSM_INSTR_ADD,

@@ -193,6 +193,10 @@ TokenArray lex(char *src, int src_len) {
                 lex_single(&lxr, TOK_STAR);
                 break;
 
+            case '/':
+                lex_single(&lxr, TOK_SLASH);
+                break;
+
             case '@':
                 lex_symbol(&lxr);
                 break;
@@ -277,6 +281,7 @@ char *token_string_from_type(TokenType type) {
         case TOK_EQUAL: return "=";
         case TOK_PLUS: return "+";
         case TOK_STAR: return "*";
+        case TOK_SLASH: return "/";
         case TOK_X: return "x";
         case TOK_FOREIGN: return "foreign";
         case TOK_GLOBAL: return "global";

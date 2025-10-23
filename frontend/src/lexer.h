@@ -24,6 +24,7 @@ typedef enum {
     TOK_EQUAL,
     TOK_PLUS,
     TOK_STAR,
+    TOK_SLASH,
     TOK_X,
 
     // keywords
