@@ -1,0 +1,42 @@
+add fn (i32 a, i32 b) -> i32 = {
+	c = add.i32 a b
+	return c
+}
+
+puts fn (*i8 msg) -> i32
+
+_start fn unit -> unit = {
+	v0 = const.i32 64
+	v1 = call add (v0, 3)
+	call write (1, v1, 1)
+	call write (1, "hello, world.\n\0", 15)
+}
+
+identity fn (i32 name) -> i32 = {
+	return a
+}
+
+Person type = (
+	[]i8 name,
+	i32 age,
+)
+
+Token type =
+	| unit binop
+	| unit unop
+	| unit number
+
+Result type =
+	| unit ok
+	| []i8 err
+
+age_up fn (Person p) -> () = {
+	v0 = mul.i32 p.age 2
+	v1 = add.i32 v0 1
+	store.i32 p.age v1
+}
+
+
+
+
+

@@ -1,5 +1,5 @@
-#ifndef COSM_ARRAY_H
-#define COSM_ARRAY_H
+#ifndef ARRAY_H
+#define ARRAY_H
 
 #include <stddef.h>
 

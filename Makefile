@@ -1,14 +1,10 @@
 CC = gcc -std=c17
 FLAGS = -g -Wall -Wextra -Werror -pedantic
-INCLUDE = -Ishared
 
 BUILD_DIR = build
 BIN = $(BUILD_DIR)/cosm
 
-FE_SRC = $(wildcard frontend/src/*.c)
-SH_SRC = $(wildcard shared/*.c)
-
-SRCS = $(FE_SRC) $(SH_SRC)
+SRCS = $(wildcard src/*.c)
 OBJS = $(patsubst %.c, $(BUILD_DIR)/%.o, $(SRCS))
 
 # commands
@@ -25,4 +21,4 @@ $(BIN): $(OBJS)
 
 $(BUILD_DIR)/%.o: %.c
 	mkdir -p $(@D)
-	$(CC) -c $(FLAGS) $(INCLUDE) $^ -o $@
+	$(CC) -c $(FLAGS) $^ -o $@
