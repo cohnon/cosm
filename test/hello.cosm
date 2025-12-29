@@ -1,42 +1,30 @@
-add fn (i32 a, i32 b) -> i32 = {
-	c = add.i32 a b
-	return c
-}
+puts fn (^)U8 -> I32
 
-puts fn (*i8 msg) -> i32
+add (a, b) = a + b
 
-_start fn unit -> unit = {
-	v0 = const.i32 64
-	v1 = call add (v0, 3)
-	call write (1, v1, 1)
-	call write (1, "hello, world.\n\0", 15)
-}
+main fn Unit -> Unit = (
+	v0 = 64
+	v1 = add (v0, 3)
 
-identity fn (i32 name) -> i32 = {
-	return a
-}
+	puts v1+3
 
-Person type = (
-	[]i8 name,
-	i32 age,
+	looking Bool =
+		running
+		or falling
+		or (eating or drinking)
+
+	puts ('one, "hello, world.\n\0", 15)
+)
+
+Person = (
+	name ()u8,
+	age  u32,
 )
 
 Token type =
-	| unit binop
-	| unit unop
-	| unit number
+	| binop
+	| unop
+	| number
 
-Result type =
-	| unit ok
-	| []i8 err
-
-age_up fn (Person p) -> () = {
-	v0 = mul.i32 p.age 2
-	v1 = add.i32 v0 1
-	store.i32 p.age v1
-}
-
-
-
-
+Result type = ok | err ()u8
 

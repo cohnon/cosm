@@ -81,6 +81,7 @@ typedef enum ItemTag {
 typedef struct Item {
 	ItemTag tag;
 	Visibility vis;
+	Type *type;
 
 	union {
 		Value *val;
