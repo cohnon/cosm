@@ -7,7 +7,7 @@
 MAP_DECL(Map, void);
 
 static size_t hash(char *key, size_t key_len) {
-    uint64_t hash = 0xcbf29ce484222325;
+    long long hash = 0xcbf29ce484222325;
     
     for (size_t i = 0; i < key_len; i++) {
         hash *= 0x100000001b3;

@@ -1,94 +1,28 @@
 #ifndef AST_H
 #define AST_H
 
-#include "array.h"
-
-typedef enum TypeTag {
+typedef enum {
 	TYPE_UNIT,
+} ast_type_tag;
 
-	TYPE_I8,
-	TYPE_I16,
-	TYPE_I32,
-	TYPE_I64,
+typedef struct {
+	ast_type_tag tag;
+} ast_type;
 
-	TYPE_PTR,
-	TYPE_SLC,
+typedef struct {
+	ast_type type;
+} ast_variable;
 
-	TYPE_FN,
-	TYPE_TYPE,
-} TypeTag;
+typedef enum {
+	ITEM_VARIABLE,
+	ITEM_TYPE,
+} ast_item_tag;
 
-typedef struct Type Type;
-
-typedef struct TypePtr {
-	Type *to;
-} TypePtr;
-
-typedef struct TypeSlc {
-	Type *of;
-} TypeSlc;
-
-typedef struct TypeFn {
-	Type *in, *out;
-} TypeFn;
-
-struct Type {
-	TypeTag tag;
-
+typedef struct {
+	ast_item_tag tag;
 	union {
-		TypePtr ptr;
-		TypeSlc slc;
-		TypeFn fn;
+		ast_variable var;
 	};
-};
-
-typedef enum InsnTag {
-	INSN_ADD_I32,
-	INSN_CONST_I32,
-
-	INSN_CALL,
-	INSN_RETURN,
-} InsnTag;
-
-typedef struct Insn {
-	InsnTag tag;
-} Insn;
-
-ARRAY_DECL(InsnList, Insn);
-
-typedef struct Value {
-	union {
-		double flt;
-		long intg;
-	};
-} Value;
-
-typedef struct Function {
-	InsnList insns;
-} Function;
-
-typedef enum Visibility {
-	ITEM_LOCAL,
-	ITEM_GLOBAL,
-	ITEM_FOREIGN,
-} Visibility;
-
-typedef enum ItemTag {
-	ITEM_TYPE_DECL,
-	ITEM_VALUE,
-} ItemTag;
-
-typedef struct Item {
-	ItemTag tag;
-	Visibility vis;
-	Type *type;
-
-	union {
-		Value *val;
-		Type *type_decl;
-	};
-} Item;
-
-ARRAY_DECL(ItemList, Item);
+} ast_item;
 
 #endif

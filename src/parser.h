@@ -4,10 +4,8 @@
 #include "lexer.h"
 #include "ast.h"
 
-typedef struct Module {
-	ItemList items;
-} Module;
+ARRAY_DECL(item_list, ast_item);
 
-Module *parse(TokenArray toks);
+item_list parse(token_list toks);
 
 #endif

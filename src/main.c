@@ -14,11 +14,11 @@ int main(int argc, char **argv) {
     int src_len;
     char *src = io_file_read(argv[1], &src_len);
 
-    TokenArray toks = lex(src, src_len);
+    token_list toks = lex(src, src_len);
 
     fprintf(stderr, "*** tokens ***\n");
     for (int i = 0; i < toks.len; i += 1) {
-        fprintf(stderr, "%s ", token_string(toks.items[i]));
+        fprintf(stderr, "%s ", token_string(toks.items[i].tag));
     }
     fprintf(stderr, "\n");
 

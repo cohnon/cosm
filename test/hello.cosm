@@ -1,30 +1,35 @@
-puts fn (^)U8 -> I32
+puts : [*]u8 -> i32
 
 add (a, b) = a + b
 
-main fn Unit -> Unit = (
-	v0 = 64
-	v1 = add (v0, 3)
+div (a, b) = {
+	if b == 0 { throw :error }
+	a / b
+}
 
-	puts v1+3
+main : fn () -> ()
+main = {
+	v1 = add (64, 3);
 
-	looking Bool =
+	puts v1 + 3;
+
+	looking =
 		running
 		or falling
-		or (eating or drinking)
+		or (eating or drinking);
 
-	puts ('one, "hello, world.\n\0", 15)
-)
+	puts (one, "hello, world.\n\0", 15);
+}
 
-Person = (
-	name ()u8,
+type person = (
+	name []u8,
 	age  u32,
 )
 
-Token type =
+type token =
 	| binop
 	| unop
 	| number
 
-Result type = ok | err ()u8
+result type = ok | err []u8
 
