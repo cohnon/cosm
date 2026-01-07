@@ -1,35 +1,5 @@
-puts : [*]u8 -> i32
+let puts: *UInt8 -> Int32
 
-add (a, b) = a + b
-
-div (a, b) = {
-	if b == 0 { throw :error }
-	a / b
+let main = fn {
+	puts ("hello, world.\n\0")
 }
-
-main : fn () -> ()
-main = {
-	v1 = add (64, 3);
-
-	puts v1 + 3;
-
-	looking =
-		running
-		or falling
-		or (eating or drinking);
-
-	puts (one, "hello, world.\n\0", 15);
-}
-
-type person = (
-	name []u8,
-	age  u32,
-)
-
-type token =
-	| binop
-	| unop
-	| number
-
-result type = ok | err []u8
-

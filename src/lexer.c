@@ -25,7 +25,16 @@ static void end_token(lexer *lxr, token_tag tag) {
 	array_append(&lxr->toks, &lxr->cur_tok);
 }
 
+#define SYNTAX_ERROR(...) do { \
+	fprintf(stderr, "lex error: " __VA_ARGS__); \
+	fprintf(stderr, "\n"); \
+	exit(EXIT_FAILURE); \
+} while(0)
+
 #define CUR (lxr->src_idx >= lxr->src_len ? '\0' : lxr->src[lxr->src_idx])
+#define NEXT (lxr->src_idx - 1 >= lxr->src_len ? '\0' : lxr->src[lxr->src_idx + 1])
+
+#define EAT lxr->src_idx += 1
 
 static int whitespace(char c) {
 	return c == ' '  || c == '\t' || c == '\r' || c == '\n';
@@ -47,9 +56,7 @@ static void lex_symbol(lexer *lxr) {
 	uint32 sym_start = lxr->cur_tok.start;
 	char *sym = &lxr->src[sym_start];
 
-	while (alphanumeric(CUR)) {
-		lxr->src_idx += 1;
-	}
+	while (alphanumeric(CUR)) { EAT; }
 
 	uint32 len = lxr->src_idx - sym_start;
 
@@ -57,10 +64,14 @@ static void lex_symbol(lexer *lxr) {
 
 	#define KEYWORD(keyword) strncmp(sym, keyword, strlen(keyword) > len ? strlen(keyword) : len) == 0
 
-	if (KEYWORD("type")) {
+	if (KEYWORD("let")) {
+		tag = TOK_LET;
+	} else if (KEYWORD("type")) {
 		tag = TOK_TYPE;
 	} else if (KEYWORD("never")) {
 		tag = TOK_NEVER;
+	} else if (KEYWORD("fn")) {
+		tag = TOK_FN;
 	} else if (KEYWORD("throw")) {
 		tag = TOK_THROW;
 	} else if (KEYWORD("return")) {
@@ -73,35 +84,29 @@ static void lex_symbol(lexer *lxr) {
 }
 
 static void skip_whitespace(lexer *lxr) {
-	while (whitespace(CUR)) {
-		lxr->src_idx += 1;
-	}
+	while (whitespace(CUR)) { EAT; }
 }
 
 static void lex_comment(lexer *lxr) {
 	assert(CUR == '#');
 
-	while (CUR != '\n') {
-		lxr->src_idx += 1;
-	}
+	while (CUR != '\n') { EAT; }
 
-	lxr->src_idx += 1; // \n
+	EAT; // \n
 }
 
 static void lex_string(lexer *lxr) {
-	lxr->src_idx += 1;
+	EAT; // "
 
-	while (CUR != '"') {
-		lxr->src_idx += 1;
-	}
+	while (CUR != '"') { EAT; }
 
-	lxr->src_idx += 1;
+	EAT; // "
 
 	end_token(lxr, TOK_STRING);
 }
 
 static void lex_single(lexer *lxr, token_tag tag) {
-	lxr->src_idx += 1;
+	EAT;
 
 	end_token(lxr, tag);
 }
@@ -137,11 +142,9 @@ static void lex_next(lexer *lxr) {
 
 
 	case ':':
-		if (alphanumeric(lxr->src[lxr->src_idx + 1])) {
-			lxr->src_idx += 1;
-			while (alphanumeric(CUR)) {
-				lxr->src_idx += 1;
-			}
+		if (alphanumeric(NEXT)) {
+			EAT; // :
+			while (alphanumeric(CUR)) { EAT; }
 			end_token(lxr, TOK_ATOM);
 			
 		} else {
@@ -154,22 +157,25 @@ static void lex_next(lexer *lxr) {
 		lex_string(lxr);
 		break;
 
+	case '\'':
+		EAT; // '
+		while (alphanumeric(CUR)) { EAT; }
+		end_token(lxr, TOK_SYMBOL);
+		break;
+
 	case '-':
-		if (lxr->src[lxr->src_idx + 1] == '>') {
-			lxr->src_idx += 2;
+		if (NEXT == '>') {
+			EAT; // -
+			EAT; // >
 			end_token(lxr, TOK_ARROW);
 		} else {
-			fprintf(stderr, "expected '->'\n");
-			exit(1);
+			SYNTAX_ERROR("expected '->'");
 		}
 		break;
 
 	default:
 		if (numeric(CUR)) {
-			while (alphanumeric(CUR)) {
-				lxr->src_idx += 1;
-			}
-
+			while (alphanumeric(CUR)) { EAT; }
 			end_token(lxr, TOK_NUMBER);
 			break;
 		}
@@ -179,12 +185,7 @@ static void lex_next(lexer *lxr) {
 			break;
 		}
 
-		fprintf(
-			stderr,
-			"error (lexer): unhandled character '%c' (%d)\n",
-			CUR, lxr->src_idx
-		);
-		exit(1);
+		SYNTAX_ERROR("unhandled character '%c' (%d)", CUR, lxr->src_idx);
 	}
 }
 
@@ -197,7 +198,6 @@ token_list lex(char *src, int src_len) {
 	array_init(&lxr.toks, 64);
 
 	while (lxr.src_idx < lxr.src_len) {
-		printf("lexing (%d %c)\n", lxr.src_idx, lxr.src[lxr.src_idx]);
 		lex_next(&lxr);
 	}
 

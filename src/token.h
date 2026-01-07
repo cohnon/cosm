@@ -32,8 +32,10 @@ typedef enum {
 	TOK_DOT,
 
 	// keywords
+	TOK_LET,
 	TOK_NEVER,
 	TOK_TYPE,
+	TOK_FN,
 
 	TOK_THROW,
 	TOK_RETURN,
