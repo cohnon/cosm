@@ -33,26 +33,19 @@ struct ast_type {
 };
 
 typedef enum {
-	PATTERN_SYMBOL,
-} ast_pattern_tag;
+	OPERATOR_INVALID,
 
-typedef struct {
-	ast_pattern_tag tag;
-	union {
-		struct {
-			token tok;
-		} symbol;
-	};
-} ast_pattern;
-
-ARRAY_DECL(pattern_list, ast_pattern);
+	// order defines the precedence
+	OPERATOR_ADD,
+	OPERATOR_MUL,
+} ast_operator;
 
 typedef enum {
 	EXPR_NUMBER,
 	EXPR_SYMBOL,
 	EXPR_BINARY_OP,
 	EXPR_BLOCK,
-	EXPR_FUNCTION_BLOCK,
+	EXPR_FUNCTION,
 	EXPR_FOREIGN,
 } ast_expr_tag;
 
@@ -68,6 +61,7 @@ struct ast_expr {
 		} number;
 
 		struct {
+			ast_operator op;
 			ast_expr *lhs;
 			ast_expr *rhs;
 		} bin_op;
@@ -91,10 +85,19 @@ typedef struct {
 	ast_item_tag tag;
 	union {
 		struct {
+			token name;
 			ast_type *type;
 			ast_expr *val;
 		} var;
 	};
 } ast_item;
+
+ARRAY_DECL(item_list, ast_item *);
+
+typedef struct {
+	item_list items;
+} ast_root;
+
+void print_ast(ast_root *ast);
 
 #endif

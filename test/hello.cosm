@@ -1,6 +1,6 @@
 let putchar = foreign "putchar" uint32 -> int32
 
 let main = fn {
-	putchar 'A';
+	putchar ('A' + 5 * 2);
 }
 

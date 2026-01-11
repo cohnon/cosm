@@ -22,5 +22,7 @@ int main(int argc, char **argv) {
     }
     fprintf(stderr, "\n");
 
-    parse(toks);
+    ast_root ast = parse(toks);
+
+	print_ast(&ast);
 }

@@ -188,7 +188,7 @@ static void lex_next(lexer *lxr) {
 			EAT; // >
 			end_token(lxr, TOK_ARROW);
 		} else {
-			SYNTAX_ERROR("expected '->'");
+			end_token(lxr, TOK_DASH);
 		}
 		break;
 

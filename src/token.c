@@ -19,6 +19,7 @@ char *token_string(token_tag tag) {
 	case TOK_ARROW: return "->";
 	case TOK_EQUAL: return "=";
 	case TOK_PLUS: return "+";
+	case TOK_DASH: return "-";
 	case TOK_STAR: return "*";
 	case TOK_SLASH: return "/";
 	case TOK_BAR: return "|";

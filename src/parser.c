@@ -5,13 +5,14 @@
 #include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdbool.h>
 
 typedef struct {
 	int toks_idx;
 	token_list toks;
-	item_list items;
+	ast_root ast;
 	chunk_alc alc;
-} context;
+} parser;
 
 #define SYNTAX_ERROR(...) do { \
 	fprintf(stderr, "parse error: " __VA_ARGS__); \
@@ -19,7 +20,7 @@ typedef struct {
 	exit(EXIT_FAILURE); \
 } while(0)
 
-#define CUR (ctx->toks.items[ctx->toks_idx >= ctx->toks.len ? ctx->toks.len - 1 : ctx->toks_idx])
+#define CUR (prs->toks.items[prs->toks_idx >= prs->toks.len ? prs->toks.len - 1 : prs->toks_idx])
 
 #define EAT(expect) do { \
 	if (CUR.tag != expect) { \
@@ -27,16 +28,17 @@ typedef struct {
 			"expected %s, got %s (%d)", \
 			token_string(expect), \
 			token_string(CUR.tag), \
-			ctx->toks_idx \
+			prs->toks_idx \
 		); \
 	} \
-	ctx->toks_idx += 1; \
+	prs->toks_idx += 1; \
 } while (0)
 
-#define EAT_ANY (ctx->toks_idx += 1)
+#define EAT_RET(expect) CUR; EAT(expect)
+#define EAT_ANY (prs->toks_idx += 1)
 
-ast_type *parse_type(context *ctx) {
-	ast_type *type = mem_alloc(&ctx->alc, ast_type);
+ast_type *parse_type(parser *prs) {
+	ast_type *type = mem_alloc(&prs->alc, ast_type);
 
 	switch (CUR.tag) {
 	case TOK_SYMBOL:
@@ -47,14 +49,14 @@ ast_type *parse_type(context *ctx) {
 	case TOK_STAR:
 		type->tag = TYPE_POINTER;
 		EAT(TOK_STAR);
-		type->ptr.to = parse_type(ctx);
+		type->ptr.to = parse_type(prs);
 		break;
 
 	case TOK_BRACE_OPEN:
 		type->tag = TYPE_SLICE;
 		EAT(TOK_BRACKET_OPEN);
 		EAT(TOK_BRACKET_CLOSE);
-		type->slc.of = parse_type(ctx);
+		type->slc.of = parse_type(prs);
 		break;
 
 	default:
@@ -62,13 +64,13 @@ ast_type *parse_type(context *ctx) {
 	}
 
 	if (CUR.tag == TOK_ARROW) {
-		ast_type *fn_type = mem_alloc(&ctx->alc, ast_type);
+		ast_type *fn_type = mem_alloc(&prs->alc, ast_type);
 		fn_type->tag = TYPE_FUNCTION;
 		fn_type->fn.in = type;
 
 		EAT(TOK_ARROW);
 
-		fn_type->fn.out = parse_type(ctx);
+		fn_type->fn.out = parse_type(prs);
 
 		return fn_type;
 	}
@@ -76,10 +78,10 @@ ast_type *parse_type(context *ctx) {
 	return type;
 }
 
-static ast_expr *parse_expression(context *ctx);
+static ast_expr *parse_expression(parser *prs);
 
-static ast_expr *parse_block(context *ctx) {
-	ast_expr *expr = mem_alloc(&ctx->alc, ast_expr);
+static ast_expr *parse_block(parser *prs) {
+	ast_expr *expr = mem_alloc(&prs->alc, ast_expr);
 	expr->tag = EXPR_BLOCK;
 
 	array_init(&expr->blk.stmts, 16);
@@ -91,7 +93,12 @@ static ast_expr *parse_block(context *ctx) {
 			SYNTAX_ERROR("unterminated block");
 		}
 
-		EAT_ANY;
+		ast_expr * expr = parse_expression(prs);
+		array_append(&expr->blk.stmts, &expr);
+		
+		if (CUR.tag != TOK_SEMICOLON) break;
+
+		EAT(TOK_SEMICOLON);
 	}
 	
 	EAT(TOK_BRACE_CLOSE);
@@ -99,97 +106,154 @@ static ast_expr *parse_block(context *ctx) {
 	return expr;
 }
 
-static ast_expr *parse_function_block(context *ctx) {
-	ast_expr *expr = mem_alloc(&ctx->alc, ast_expr);
-	expr->tag = EXPR_FUNCTION_BLOCK;
+static ast_expr *parse_function_block(parser *prs) {
+	ast_expr *expr = mem_alloc(&prs->alc, ast_expr);
+	expr->tag = EXPR_FUNCTION;
 
 	EAT(TOK_FN);
 
 	expr->fn_blk.type = NULL;
 	if (CUR.tag != TOK_BRACE_OPEN) {
-		expr->fn_blk.type = parse_type(ctx);
+		expr->fn_blk.type = parse_type(prs);
 	}
 
-	expr->fn_blk.body = parse_block(ctx);
+	expr->fn_blk.body = parse_block(prs);
 
 	return expr;
 }
 
-static ast_expr *parse_foreign(context *ctx) {
-	ast_expr *expr = mem_alloc(&ctx->alc, ast_expr);
+static ast_expr *parse_foreign(parser *prs) {
+	ast_expr *expr = mem_alloc(&prs->alc, ast_expr);
 	expr->tag = EXPR_FOREIGN;
 
 	EAT(TOK_FOREIGN);
 	EAT(TOK_STRING);
-	parse_type(ctx);
+	parse_type(prs);
 
 	return expr;
 }
 
-static ast_expr *parse_primary_expression(context *ctx) {
+static ast_expr *parse_symbol(parser *prs) {
+	ast_expr *expr = mem_alloc(&prs->alc, ast_expr);
+	expr->tag = EXPR_SYMBOL;
+
+	return expr;
+}
+
+static bool cur_starts_expression(parser *prs) {
 	switch (CUR.tag) {
-	case TOK_FN: return parse_function_block(ctx);
-	case TOK_FOREIGN: return parse_foreign(ctx);
-	default:
-		SYNTAX_ERROR("expected expression");
+	case TOK_FN:
+	case TOK_FOREIGN:
+	case TOK_SYMBOL: return true;
+	
+	default: return false;
 	}
 }
 
-static ast_expr *parse_expression_prec(context *ctx, uint32 prec) {
-	(void)prec;
-	ast_expr *expr = parse_primary_expression(ctx);
-
-	return expr;
+static ast_expr *parse_primary_expression(parser *prs) {
+	switch (CUR.tag) {
+	case TOK_FN: return parse_function_block(prs);
+	case TOK_FOREIGN: return parse_foreign(prs);
+	case TOK_SYMBOL: return parse_symbol(prs);
+	default:
+		SYNTAX_ERROR("expected expression, got %s", token_string(CUR.tag));
+	}
 }
 
-static ast_expr *parse_expression(context *ctx) {
-	return parse_expression_prec(ctx, 0);
+static ast_operator parse_operator(parser *prs) {
+	switch (CUR.tag) {
+	case TOK_PLUS:
+	case TOK_DASH: return OPERATOR_ADD;
+
+	case TOK_STAR:
+	case TOK_SLASH: return OPERATOR_MUL;
+
+	default: return OPERATOR_INVALID;
+	}
 }
 
-static void parse_variable(context *ctx, ast_item *item) {
+static ast_expr *parse_expression_prec(parser *prs, uint32 prec) {
+	ast_expr *lhs = parse_primary_expression(prs);
+
+    for (;;) {
+        ast_operator op = parse_operator(prs);
+
+        // no operator
+        if (op == OPERATOR_INVALID) break;
+
+        // if next operator doesn't exceed current precedence
+        // break out and wrap expression so far
+        // 1 + 2 + 3 * 4
+        //       ^ has same precedence so wrap previous expression (1 + 2)
+        if (op <= prec) break;
+
+        EAT_ANY; // operator
+
+        ast_expr *rhs = parse_expression_prec(prs, op);
+
+        ast_expr *op_expr = mem_alloc(&prs->alc, ast_expr);
+        op_expr->tag = EXPR_BINARY_OP;
+        op_expr->bin_op.op = op;
+        op_expr->bin_op.lhs = lhs;
+        op_expr->bin_op.rhs = rhs;
+
+        lhs = op_expr;
+    }
+
+	return lhs;
+}
+
+static ast_expr *parse_expression(parser *prs) {
+	return parse_expression_prec(prs, 0);
+}
+
+static void parse_variable(parser *prs, ast_item *item) {
 	item->tag = ITEM_VARIABLE;
 
 	EAT(TOK_LET);
-	EAT(TOK_SYMBOL);
+	item->var.name = EAT_RET(TOK_SYMBOL);
 	
 	// type
 	item->var.type = NULL;
 	if (CUR.tag == TOK_COLON) {
 		EAT(TOK_COLON);
-		item->var.type = parse_type(ctx);
+		item->var.type = parse_type(prs);
 	}
 
 	// value
 	if (CUR.tag == TOK_EQUAL) {
 		EAT(TOK_EQUAL);
-		item->var.val = parse_expression(ctx);
+		item->var.val = parse_expression(prs);
 	}
 }
 
-static ast_item *parse_item(context *ctx) {
-	ast_item *item = mem_alloc(&ctx->alc, ast_item);
+static ast_item *parse_item(parser *prs) {
+	ast_item *item = mem_alloc(&prs->alc, ast_item);
 
 	switch (CUR.tag) {
-	case TOK_LET: parse_variable(ctx, item); break;
+	case TOK_LET: parse_variable(prs, item); break;
 	default: SYNTAX_ERROR("expected top level item, got %s", token_string(CUR.tag));
 	}
 
 	return item;
 }
 
-static void parse_module(context *ctx) {
+static void parse_module(parser *prs) {
 	while (CUR.tag != TOK_EOF) {
-		parse_item(ctx);
+		ast_item *item = parse_item(prs);
+		array_append(&prs->ast.items, &item);
 	}
 }
 
-item_list parse(token_list toks) {
-	context ctx;
-	ctx.toks = toks;
-	ctx.toks_idx = 0;
-	ctx.alc = chunk_alc_init(CHUNK_SIZE_SMALL);
+ast_root parse(token_list toks) {
+	parser prs;
+	prs.toks = toks;
+	prs.toks_idx = 0;
+	prs.alc = chunk_alc_init(CHUNK_SIZE_SMALL);
 
-	parse_module(&ctx);
+	array_init(&prs.ast.items, 32);
 
-	return ctx.items;
+	parse_module(&prs);
+
+	return prs.ast;
 }

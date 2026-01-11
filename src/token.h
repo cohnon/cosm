@@ -25,6 +25,7 @@ typedef enum {
 	TOK_ARROW,
 	TOK_EQUAL,
 	TOK_PLUS,
+	TOK_DASH,
 	TOK_STAR,
 	TOK_SLASH,
 	TOK_BAR,
