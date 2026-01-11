@@ -12,6 +12,7 @@ typedef enum {
 	TOK_ATOM,
 	TOK_NUMBER,
 	TOK_STRING,
+	TOK_CHARACTER,
 
 	// symbols
 	TOK_PAREN_OPEN,
@@ -36,6 +37,7 @@ typedef enum {
 	TOK_NEVER,
 	TOK_TYPE,
 	TOK_FN,
+	TOK_FOREIGN,
 
 	TOK_THROW,
 	TOK_RETURN,

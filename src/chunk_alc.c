@@ -18,7 +18,7 @@ static chunk *create_chunk(chunk_alc *alc) {
 chunk_alc chunk_alc_init(uint64 chunk_size) {
 	chunk_alc alc = { 0 };
 	alc.chunk_size = chunk_size;
-	create_chunk(&alc);
+	alc.cur = create_chunk(&alc);
 
 	return alc;
 }

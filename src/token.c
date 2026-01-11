@@ -8,6 +8,7 @@ char *token_string(token_tag tag) {
 	case TOK_ATOM: return ":atom";
 	case TOK_NUMBER: return "<number>";
 	case TOK_STRING: return "<string>";
+	case TOK_CHARACTER: return "<character>";
 	case TOK_PAREN_OPEN: return "(";
 	case TOK_PAREN_CLOSE: return ")";
 	case TOK_BRACKET_OPEN: return "[";
@@ -28,6 +29,7 @@ char *token_string(token_tag tag) {
 	case TOK_NEVER: return "never";
 	case TOK_TYPE: return "type";
 	case TOK_FN: return "fn";
+	case TOK_FOREIGN: return "foreign";
 	case TOK_THROW: return "throw";
 	case TOK_RETURN: return "return";
 	default: return "<unhandled>";

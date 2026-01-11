@@ -72,6 +72,8 @@ static void lex_symbol(lexer *lxr) {
 		tag = TOK_NEVER;
 	} else if (KEYWORD("fn")) {
 		tag = TOK_FN;
+	} else if (KEYWORD("foreign")) {
+		tag = TOK_FOREIGN;
 	} else if (KEYWORD("throw")) {
 		tag = TOK_THROW;
 	} else if (KEYWORD("return")) {
@@ -128,7 +130,7 @@ static void lex_next(lexer *lxr) {
 	SINGLE('[', TOK_BRACKET_OPEN);
 	SINGLE(']', TOK_BRACKET_CLOSE);
 	SINGLE('{', TOK_BRACE_OPEN);
-	SINGLE('}', TOK_BRACKET_CLOSE);
+	SINGLE('}', TOK_BRACE_CLOSE);
 	SINGLE(',', TOK_COMMA);
 	SINGLE('*', TOK_STAR);
 	SINGLE('/', TOK_SLASH);
@@ -159,6 +161,23 @@ static void lex_next(lexer *lxr) {
 
 	case '\'':
 		EAT; // '
+		// a character is either has the for '*' or '\*'
+		// while a symbol is '*
+		if (NEXT == '\'') {
+			EAT; // *
+			EAT; // '
+			end_token(lxr, TOK_CHARACTER);
+			break;
+		}
+
+		if (CUR == '\\') {
+			EAT; // escape
+			while (CUR != '\'') { EAT; }
+			EAT; // '
+			end_token(lxr, TOK_CHARACTER);
+			break;
+		}
+
 		while (alphanumeric(CUR)) { EAT; }
 		end_token(lxr, TOK_SYMBOL);
 		break;

@@ -1,5 +1,6 @@
-let puts: *UInt8 -> Int32
+let putchar = foreign "putchar" uint32 -> int32
 
 let main = fn {
-	puts ("hello, world.\n\0")
+	putchar 'A';
 }
+

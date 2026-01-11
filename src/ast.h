@@ -6,6 +6,7 @@
 
 typedef enum {
 	TYPE_UNIT,
+	TYPE_FUNCTION,
 	TYPE_POINTER,
 	TYPE_SLICE,
 	TYPE_SYMBOL,
@@ -16,6 +17,11 @@ typedef struct ast_type ast_type;
 struct ast_type {
 	ast_type_tag tag;
 	union {
+		struct {
+			ast_type *in;
+			ast_type *out;
+		} fn;
+
 		struct {
 			ast_type *to;
 		} ptr;
@@ -46,6 +52,8 @@ typedef enum {
 	EXPR_SYMBOL,
 	EXPR_BINARY_OP,
 	EXPR_BLOCK,
+	EXPR_FUNCTION_BLOCK,
+	EXPR_FOREIGN,
 } ast_expr_tag;
 
 typedef struct ast_expr ast_expr;
@@ -65,10 +73,13 @@ struct ast_expr {
 		} bin_op;
 
 		struct {
-			ast_expr *in;
-			ast_expr *out;
-			expr_list *body;
+			expr_list stmts;
 		} blk;
+
+		struct {
+			ast_type *type;
+			ast_expr *body;
+		} fn_blk;
 	};
 };
 
@@ -80,7 +91,7 @@ typedef struct {
 	ast_item_tag tag;
 	union {
 		struct {
-			ast_expr *type;
+			ast_type *type;
 			ast_expr *val;
 		} var;
 	};
