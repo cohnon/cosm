@@ -10,7 +10,7 @@
 typedef struct {
 	int toks_idx;
 	token_list toks;
-	ast_root ast;
+	ast_module ast;
 	chunk_alc alc;
 } parser;
 
@@ -89,19 +89,37 @@ static ast_expr *parse_block(parser *prs) {
 	EAT(TOK_BRACE_OPEN);
 
 	while (CUR.tag != TOK_BRACE_CLOSE) {
-		if (CUR.tag == TOK_EOF) {
-			SYNTAX_ERROR("unterminated block");
-		}
+		ast_expr *stmt_expr = parse_expression(prs);
+		array_append(&expr->blk.stmts, &stmt_expr);
 
-		ast_expr * expr = parse_expression(prs);
-		array_append(&expr->blk.stmts, &expr);
-		
 		if (CUR.tag != TOK_SEMICOLON) break;
 
 		EAT(TOK_SEMICOLON);
 	}
-	
+
 	EAT(TOK_BRACE_CLOSE);
+
+	return expr;
+}
+
+static ast_expr *parse_tuple(parser *prs) {
+	ast_expr *expr = mem_alloc(&prs->alc, ast_expr);
+	expr->tag = EXPR_TUPLE;
+
+	array_init(&expr->tup.vals, 4);
+	
+	EAT(TOK_PAREN_OPEN);
+
+	while (CUR.tag != TOK_PAREN_CLOSE) {
+		ast_expr *val_expr = parse_expression(prs);
+		array_append(&expr->blk.stmts, &val_expr);
+
+		if (CUR.tag != TOK_COMMA) break;
+
+		EAT(TOK_COMMA);
+	}
+
+	EAT(TOK_PAREN_CLOSE);
 
 	return expr;
 }
@@ -112,12 +130,12 @@ static ast_expr *parse_function_block(parser *prs) {
 
 	EAT(TOK_FN);
 
-	expr->fn_blk.type = NULL;
+	expr->fn.type = NULL;
 	if (CUR.tag != TOK_BRACE_OPEN) {
-		expr->fn_blk.type = parse_type(prs);
+		expr->fn.type = parse_type(prs);
 	}
 
-	expr->fn_blk.body = parse_block(prs);
+	expr->fn.body = parse_block(prs);
 
 	return expr;
 }
@@ -136,12 +154,42 @@ static ast_expr *parse_foreign(parser *prs) {
 static ast_expr *parse_symbol(parser *prs) {
 	ast_expr *expr = mem_alloc(&prs->alc, ast_expr);
 	expr->tag = EXPR_SYMBOL;
+	expr->sym = EAT_RET(TOK_SYMBOL);
+
+	return expr;
+}
+
+static ast_expr *parse_number(parser *prs) {
+	ast_expr *expr = mem_alloc(&prs->alc, ast_expr);
+	expr->tag = EXPR_NUMBER;
+	expr->num = EAT_RET(TOK_NUMBER);
+
+	return expr;
+}
+
+static ast_expr *parse_character(parser *prs) {
+	ast_expr *expr = mem_alloc(&prs->alc, ast_expr);
+	expr->tag = EXPR_CHARACTER;
+	expr->num = EAT_RET(TOK_CHARACTER);
+
+	return expr;
+}
+
+static ast_expr *parse_string(parser *prs) {
+	ast_expr *expr = mem_alloc(&prs->alc, ast_expr);
+	expr->tag = EXPR_STRING;
+	expr->num = EAT_RET(TOK_STRING);
 
 	return expr;
 }
 
 static bool cur_starts_expression(parser *prs) {
 	switch (CUR.tag) {
+	case TOK_NUMBER:
+	case TOK_CHARACTER:
+	case TOK_STRING:
+	case TOK_BRACE_OPEN:
+	case TOK_PAREN_OPEN:
 	case TOK_FN:
 	case TOK_FOREIGN:
 	case TOK_SYMBOL: return true;
@@ -153,8 +201,13 @@ static bool cur_starts_expression(parser *prs) {
 static ast_expr *parse_primary_expression(parser *prs) {
 	switch (CUR.tag) {
 	case TOK_FN: return parse_function_block(prs);
+	case TOK_BRACE_OPEN: return parse_block(prs);
+	case TOK_PAREN_OPEN: return parse_tuple(prs);
 	case TOK_FOREIGN: return parse_foreign(prs);
 	case TOK_SYMBOL: return parse_symbol(prs);
+	case TOK_NUMBER: return parse_number(prs);
+	case TOK_CHARACTER: return parse_character(prs);
+	case TOK_STRING: return parse_string(prs);
 	default:
 		SYNTAX_ERROR("expected expression, got %s", token_string(CUR.tag));
 	}
@@ -163,10 +216,10 @@ static ast_expr *parse_primary_expression(parser *prs) {
 static ast_operator parse_operator(parser *prs) {
 	switch (CUR.tag) {
 	case TOK_PLUS:
-	case TOK_DASH: return OPERATOR_ADD;
+	case TOK_DASH: return OPERATOR_ADDITION;
 
 	case TOK_STAR:
-	case TOK_SLASH: return OPERATOR_MUL;
+	case TOK_SLASH: return OPERATOR_MULTIPLICATION;
 
 	default: return OPERATOR_INVALID;
 	}
@@ -176,6 +229,24 @@ static ast_expr *parse_expression_prec(parser *prs, uint32 prec) {
 	ast_expr *lhs = parse_primary_expression(prs);
 
     for (;;) {
+		// check application
+		if (cur_starts_expression(prs)) {
+			// a + f x + c
+			//      ^ f(x)
+			
+			if (OPERATOR_APPLICATION <= prec) break;
+
+			ast_expr *op_expr = mem_alloc(&prs->alc, ast_expr);
+			op_expr->tag = EXPR_BINARY_OP;
+			op_expr->bin_op.op = OPERATOR_APPLICATION;
+			op_expr->bin_op.lhs = lhs;
+			op_expr->bin_op.rhs = parse_expression_prec(prs, OPERATOR_APPLICATION);
+
+			lhs = op_expr;
+
+			continue;
+		}
+
         ast_operator op = parse_operator(prs);
 
         // no operator
@@ -187,7 +258,7 @@ static ast_expr *parse_expression_prec(parser *prs, uint32 prec) {
         //       ^ has same precedence so wrap previous expression (1 + 2)
         if (op <= prec) break;
 
-        EAT_ANY; // operator
+        EAT_ANY; // eat operator
 
         ast_expr *rhs = parse_expression_prec(prs, op);
 
@@ -245,7 +316,7 @@ static void parse_module(parser *prs) {
 	}
 }
 
-ast_root parse(token_list toks) {
+ast_module parse(token_list toks) {
 	parser prs;
 	prs.toks = toks;
 	prs.toks_idx = 0;

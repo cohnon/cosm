@@ -1,3 +1,4 @@
+#include "bytecode.h"
 #include "io.h"
 #include "lexer.h"
 #include "parser.h"
@@ -22,7 +23,12 @@ int main(int argc, char **argv) {
     }
     fprintf(stderr, "\n");
 
-    ast_root ast = parse(toks);
+    ast_module ast = parse(toks);
 
+    fprintf(stderr, "*** ast ***\n");
 	print_ast(&ast);
+
+	lower(&ast);
+
+	return EXIT_SUCCESS;
 }

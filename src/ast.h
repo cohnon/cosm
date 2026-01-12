@@ -36,15 +36,21 @@ typedef enum {
 	OPERATOR_INVALID,
 
 	// order defines the precedence
-	OPERATOR_ADD,
-	OPERATOR_MUL,
+	OPERATOR_ADDITION,
+	OPERATOR_MULTIPLICATION,
+	OPERATOR_APPLICATION,
 } ast_operator;
+
+char *operator_string(ast_operator op);
 
 typedef enum {
 	EXPR_NUMBER,
+	EXPR_CHARACTER,
+	EXPR_STRING,
 	EXPR_SYMBOL,
 	EXPR_BINARY_OP,
 	EXPR_BLOCK,
+	EXPR_TUPLE,
 	EXPR_FUNCTION,
 	EXPR_FOREIGN,
 } ast_expr_tag;
@@ -55,10 +61,9 @@ ARRAY_DECL(expr_list, ast_expr *);
 struct ast_expr {
 	ast_expr_tag tag;
 	union {
-		union {
-			double float_;
-			uint64 int_;
-		} number;
+		token num;
+
+		token sym;
 
 		struct {
 			ast_operator op;
@@ -71,9 +76,13 @@ struct ast_expr {
 		} blk;
 
 		struct {
+			expr_list vals;
+		} tup;
+
+		struct {
 			ast_type *type;
 			ast_expr *body;
-		} fn_blk;
+		} fn;
 	};
 };
 
@@ -95,9 +104,10 @@ typedef struct {
 ARRAY_DECL(item_list, ast_item *);
 
 typedef struct {
+	char *src_code;
 	item_list items;
-} ast_root;
+} ast_module;
 
-void print_ast(ast_root *ast);
+void print_ast(ast_module *ast);
 
 #endif
