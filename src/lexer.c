@@ -7,12 +7,10 @@
 #include <string.h>
 
 typedef struct {
-	char *src;
-	int src_len;
+	module *mod;
 	int src_idx;
 
 	token cur_tok;
-	token_list toks;
 } lexer;
 
 static void start_token(lexer *lxr) {
@@ -22,7 +20,7 @@ static void start_token(lexer *lxr) {
 static void end_token(lexer *lxr, token_tag tag) {
 	lxr->cur_tok.tag = tag;
 
-	array_append(&lxr->toks, &lxr->cur_tok);
+	array_append(&lxr->mod->toks, &lxr->cur_tok);
 }
 
 #define SYNTAX_ERROR(...) do { \
@@ -31,8 +29,8 @@ static void end_token(lexer *lxr, token_tag tag) {
 	exit(EXIT_FAILURE); \
 } while(0)
 
-#define CUR (lxr->src_idx >= lxr->src_len ? '\0' : lxr->src[lxr->src_idx])
-#define NEXT (lxr->src_idx - 1 >= lxr->src_len ? '\0' : lxr->src[lxr->src_idx + 1])
+#define CUR (lxr->src_idx >= lxr->mod->src_len ? '\0' : lxr->mod->src[lxr->src_idx])
+#define NEXT (lxr->src_idx - 1 >= lxr->mod->src_len ? '\0' : lxr->mod->src[lxr->src_idx + 1])
 
 #define EAT lxr->src_idx += 1
 
@@ -54,7 +52,7 @@ static int alphanumeric(char c) {
 
 static void lex_symbol(lexer *lxr) {
 	uint32 sym_start = lxr->cur_tok.start;
-	char *sym = &lxr->src[sym_start];
+	char *sym = &lxr->mod->src[sym_start];
 
 	while (alphanumeric(CUR)) { EAT; }
 
@@ -208,20 +206,17 @@ static void lex_next(lexer *lxr) {
 	}
 }
 
-token_list lex(char *src, int src_len) {
+void lex(module *mod) {
 	lexer lxr;
-	lxr.src = src;
-	lxr.src_len = src_len;
 	lxr.src_idx = 0;
+	lxr.mod = mod;
 
-	array_init(&lxr.toks, 64);
+	array_init(&lxr.mod->toks, 64);
 
-	while (lxr.src_idx < lxr.src_len) {
+	while (lxr.src_idx < lxr.mod->src_len) {
 		lex_next(&lxr);
 	}
 
 	end_token(&lxr, TOK_EOF);
-
-	return lxr.toks;
 }
 

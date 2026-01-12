@@ -1,6 +1,7 @@
 #ifndef TOKEN_H
 #define TOKEN_H
 
+#include "array.h"
 #include "cosm.h"
 
 typedef enum {
@@ -48,6 +49,8 @@ typedef struct {
 	token_tag tag;
 	uint32 start;
 } token;
+
+ARRAY_DECL(token_list, token);
 
 char *token_string(token_tag tag);
 

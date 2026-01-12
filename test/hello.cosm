@@ -1,7 +1,23 @@
 let putchar = foreign "putchar" uint32 -> int32
 
 let main = fn {
-	putchar ('A');
-	putchar 'B';
+	putchar 'A';
 }
 
+# cosm text
+# @putchar : uint32 -> int32
+#
+# @main : unit -> unit
+#   %1 = uint32 65
+#   call @putchar %1
+#   return
+
+# cosm binary
+# string_blob: [(7, putchar) (4, main)]
+# imports: [(0 0)]
+# exports: [(1 0)]
+# items: [(3 0)]
+# types: [0 3]
+# type_blob: [fn uint32 int32 fn unit unit]
+# strings: [0 7]
+# code: [<bytecode>]

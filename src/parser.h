@@ -1,9 +1,10 @@
 #ifndef PARSER_H
 #define PARSER_H
 
-#include "lexer.h"
+#include "module.h"
+#include "token.h"
 #include "ast.h"
 
-ast_module parse(token_list toks);
+void parse(module *mod);
 
 #endif

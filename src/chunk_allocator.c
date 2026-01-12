@@ -1,4 +1,4 @@
-#include "chunk_alc.h"
+#include "chunk_allocator.h"
 #include <stdlib.h>
 
 struct chunk {
@@ -7,7 +7,7 @@ struct chunk {
 	uint8 buf[];
 };
 
-static chunk *create_chunk(chunk_alc *alc) {
+static chunk *create_chunk(chunk_allocator *alc) {
 	chunk *c = malloc(sizeof(chunk) + alc->chunk_size);
 	c->used = 0;
 	c->prev = alc->cur;
@@ -15,15 +15,15 @@ static chunk *create_chunk(chunk_alc *alc) {
 	return c;
 }
 
-chunk_alc chunk_alc_init(uint64 chunk_size) {
-	chunk_alc alc = { 0 };
+chunk_allocator chunk_allocator_init(uint64 chunk_size) {
+	chunk_allocator alc = { 0 };
 	alc.chunk_size = chunk_size;
 	alc.cur = create_chunk(&alc);
 
 	return alc;
 }
 
-void chunk_alc_deinit(chunk_alc *alc) {
+void chunk_allocator_deinit(chunk_allocator *alc) {
 	chunk *cur = alc->cur;
 	while (cur) {
 		chunk *to_free = cur;
@@ -32,7 +32,7 @@ void chunk_alc_deinit(chunk_alc *alc) {
 	}
 }
 
-void *mem_alloc_untyped(chunk_alc *alc, size_t size) {
+void *mem_alloc_untyped(chunk_allocator *alc, size_t size) {
 	if (alc->cur->used + size > alc->chunk_size) {
 		create_chunk(alc);
 	}

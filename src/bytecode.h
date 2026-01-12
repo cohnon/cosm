@@ -1,8 +1,6 @@
 #ifndef BYTECODE_H
 #define BYTECODE_H
 
-#include "array.h"
-#include "ast.h"
 #include "buffer.h"
 
 typedef enum {
@@ -26,17 +24,16 @@ typedef enum {
 	COSM_UNION,
 } bc_type;
 
-ARRAY_DECL(type_list, bc_type);
-
 typedef struct {
+	byte_buffer type_table;
 	byte_buffer types;
+	byte_buffer string_table;
+	byte_buffer strings;
 	byte_buffer imports;
 	byte_buffer exports;
 	byte_buffer items;
 	byte_buffer code;
 	byte_buffer data;
 } bytecode;
-
-bytecode lower(ast_module *ast);
 
 #endif

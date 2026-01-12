@@ -82,6 +82,7 @@ char *operator_string(ast_operator op) {
 	case OPERATOR_ADDITION: return "+";
 	case OPERATOR_MULTIPLICATION: return "*";
 	case OPERATOR_APPLICATION: return "$";
+	default: return "<invalid operator>";
 	}
 }
 

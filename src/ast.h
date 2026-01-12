@@ -104,10 +104,9 @@ typedef struct {
 ARRAY_DECL(item_list, ast_item *);
 
 typedef struct {
-	char *src_code;
 	item_list items;
-} ast_module;
+} ast_root;
 
-void print_ast(ast_module *ast);
+void print_ast(ast_root *ast);
 
 #endif
