@@ -23,30 +23,48 @@ static void ensure(byte_buffer *buf, size_t size) {
     }
 }
 
-size_t buf_push(byte_buffer *buf, uint8_t n) {
+uint32_t buf_ref(byte_buffer *buf) {
+	return buf->len;
+}
+
+uint32_t buf_push(byte_buffer *buf, uint8_t n) {
     ensure(buf, sizeof(n));
     return buf_push_bytes(buf, &n, sizeof(n));
 }
 
-size_t buf_push_bytes(byte_buffer *buf, void *ptr, size_t size) {
+uint32_t buf_push_bytes(byte_buffer *buf, void *ptr, size_t size) {
     ensure(buf, size);
     memcpy(buf->ptr + buf->len, ptr, size);
-    size_t idx = buf->len;
+	uint32_t start = buf->len;
     buf->len += size;
 
-    return idx;
+	return start;
 }
 
-size_t buf_push_i32(byte_buffer *buf, uint32_t n) {
+uint32_t buf_push_i32(byte_buffer *buf, uint32_t n) {
     ensure(buf, sizeof(n));
     return buf_push_bytes(buf, &n, sizeof(n));
 }
 
-size_t buf_push_varint(byte_buffer *buf, uint64_t n) {
-    ensure(buf, sizeof(n));
-    return buf_push_bytes(buf, &n, sizeof(n));
-}
+uint32_t buf_push_varint(byte_buffer *buf, uint64_t n) {
+	uint64_t encoded = n << 1;
+	int n_bytes = 0;
+	int max = 1 << 7;
 
-void buf_inc_varint(byte_buffer *buf, size_t idx) {
-    *(size_t*)&buf->ptr[idx] += 1;
+	uint32_t start = buf->len;
+
+	if (n >= 1ull << 63) {
+		buf->ptr[buf->len++] = 0xff;
+		buf_push_bytes(buf, &encoded, 8);
+		return start;
+	}
+
+	while (n > max) {
+		encoded = (encoded << 1) | 1;
+		max <<= 7;
+		n_bytes += 1;
+	}
+
+	buf_push_bytes(buf, &encoded, 8);
+	return start;
 }

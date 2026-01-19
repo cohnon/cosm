@@ -22,18 +22,20 @@ typedef enum {
 	COSM_FN,
 	COSM_TUPLE,
 	COSM_UNION,
+
+	COSM_TYPE,
 } bc_type;
 
 typedef struct {
-	byte_buffer type_table;
-	byte_buffer types;
-	byte_buffer string_table;
-	byte_buffer strings;
 	byte_buffer imports;
 	byte_buffer exports;
 	byte_buffer items;
+
 	byte_buffer code;
 	byte_buffer data;
+	byte_buffer types;
+
+	byte_buffer strings;
 } bytecode;
 
 #endif

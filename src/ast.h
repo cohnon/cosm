@@ -5,23 +5,24 @@
 #include "token.h"
 
 typedef enum {
+	TYPE_INFER,
+
 	TYPE_UNIT,
-	TYPE_FUNCTION,
+	TYPE_SYMBOL,
+
 	TYPE_POINTER,
 	TYPE_SLICE,
-	TYPE_SYMBOL,
-	TYPE_INFER,
+
+	TYPE_TUPLE,
+	TYPE_FUNCTION,
 } ast_type_tag;
 
 typedef struct ast_type ast_type;
+ARRAY_DECL(type_list, ast_type);
+
 struct ast_type {
 	ast_type_tag tag;
 	union {
-		struct {
-			ast_type *in;
-			ast_type *out;
-		} fn;
-
 		struct {
 			ast_type *to;
 		} ptr;
@@ -29,6 +30,13 @@ struct ast_type {
 		struct {
 			ast_type *of;
 		} slc;
+
+		struct {
+			ast_type *in;
+			ast_type *out;
+		} fn;
+
+		type_list tup;
 	};
 };
 

@@ -13,11 +13,11 @@ let main = fn {
 #   return
 
 # cosm binary
-# string_blob: [(7, putchar) (4, main)]
-# imports: [(0 0)]
-# exports: [(1 0)]
-# items: [(3 0)]
-# types: [0 3]
-# type_blob: [fn uint32 int32 fn unit unit]
-# strings: [0 7]
+# imports (name, type): [(0 0)]
+# exports (name, item): [(1 0)]
+#
+# items (type, storage): [(3 0)]
 # code: [<bytecode>]
+# types: [fn uint32 int32 fn unit unit]
+#
+# strings: [7 putchar 4 main]
