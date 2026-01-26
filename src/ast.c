@@ -37,15 +37,6 @@ static void print_expression(ast_expr *expr) {
 		}
 		break;
 
-	case EXPR_FUNCTION:
-		printf("fn ");
-		print_expression(expr->fn.body);
-		break;
-
-	case EXPR_FOREIGN:
-		printf("foreign fn");
-		break;
-
 	case EXPR_BINARY_OP:
 		printf("%s ", operator_string(expr->bin_op.op));
 		print_expression(expr->bin_op.lhs);
@@ -53,8 +44,19 @@ static void print_expression(ast_expr *expr) {
 		print_expression(expr->bin_op.rhs);
 		break;
 
+	case EXPR_CALL:
+		printf("call ");
+		print_expression(expr->call.callee);
+		printf(" ");
+		expr_list *args = &expr->call.args;
+		for (int i = 0; i < args->len; i++) {
+			print_expression(args->items[i]);
+			if (i < args->len - 1) { printf(", "); }
+		}
+		break;
+
 	default:
-		printf("unhandled expression");
+		printf("unhandled expression %d\n", expr->tag);
 	}
 
 	printf(")");
@@ -62,6 +64,19 @@ static void print_expression(ast_expr *expr) {
 
 static void print_item(ast_item *item) {
 	switch (item->tag) {
+	case ITEM_FUNCTION:
+		printf("<func>\n");
+		if (item->func.body != NULL) {
+			expr_list *stmts = &item->func.body->blk.stmts;
+			for (int i = 0; i < stmts->len; i++) {
+				print_expression(stmts->items[i]);
+			}
+		} else {
+			printf("foreign");
+		}
+		printf("\n");
+		break;
+
 	case ITEM_VARIABLE:
 		printf("<var>\n");
 		print_expression(item->var.val);
@@ -81,7 +96,6 @@ char *operator_string(ast_operator op) {
 	case OPERATOR_INVALID: return "invalid";
 	case OPERATOR_ADDITION: return "+";
 	case OPERATOR_MULTIPLICATION: return "*";
-	case OPERATOR_APPLICATION: return "$";
 	default: return "<invalid operator>";
 	}
 }

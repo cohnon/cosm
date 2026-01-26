@@ -62,16 +62,14 @@ static void lex_symbol(lexer *lxr) {
 
 	#define KEYWORD(keyword) strncmp(sym, keyword, strlen(keyword) > len ? strlen(keyword) : len) == 0
 
-	if (KEYWORD("let")) {
-		tag = TOK_LET;
-	} else if (KEYWORD("type")) {
+	if (KEYWORD("type")) {
 		tag = TOK_TYPE;
 	} else if (KEYWORD("never")) {
 		tag = TOK_NEVER;
-	} else if (KEYWORD("fn")) {
-		tag = TOK_FN;
-	} else if (KEYWORD("foreign")) {
-		tag = TOK_FOREIGN;
+	} else if (KEYWORD("func")) {
+		tag = TOK_FUNC;
+	} else if (KEYWORD("var")) {
+		tag = TOK_VAR;
 	} else if (KEYWORD("throw")) {
 		tag = TOK_THROW;
 	} else if (KEYWORD("return")) {

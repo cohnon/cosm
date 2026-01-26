@@ -46,7 +46,6 @@ typedef enum {
 	// order defines the precedence
 	OPERATOR_ADDITION,
 	OPERATOR_MULTIPLICATION,
-	OPERATOR_APPLICATION,
 } ast_operator;
 
 char *operator_string(ast_operator op);
@@ -59,8 +58,7 @@ typedef enum {
 	EXPR_BINARY_OP,
 	EXPR_BLOCK,
 	EXPR_TUPLE,
-	EXPR_FUNCTION,
-	EXPR_FOREIGN,
+	EXPR_CALL,
 } ast_expr_tag;
 
 typedef struct ast_expr ast_expr;
@@ -88,19 +86,33 @@ struct ast_expr {
 		} tup;
 
 		struct {
-			ast_type *type;
-			ast_expr *body;
-		} fn;
+			ast_expr *callee;
+			expr_list args;
+		} call;
 	};
 };
 
+typedef struct {
+	token name;
+	ast_type *type;
+} ast_param;
+
+ARRAY_DECL(param_list, ast_param);
+
 typedef enum {
+	ITEM_FUNCTION,
 	ITEM_VARIABLE,
 } ast_item_tag;
 
 typedef struct {
 	ast_item_tag tag;
 	union {
+		struct {
+			token name;
+			param_list params;
+			ast_type *ret_type;
+			ast_expr *body;
+		} func;
 		struct {
 			token name;
 			ast_type *type;

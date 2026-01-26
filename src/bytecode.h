@@ -29,13 +29,14 @@ typedef enum {
 typedef struct {
 	byte_buffer imports;
 	byte_buffer exports;
-	byte_buffer items;
+	byte_buffer exports_extra;
+
+	byte_buffer funcs;
+	byte_buffer vars;
+	byte_buffer types;
 
 	byte_buffer code;
 	byte_buffer data;
-	byte_buffer types;
-
-	byte_buffer strings;
 } bytecode;
 
 #endif

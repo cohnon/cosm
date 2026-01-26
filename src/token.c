@@ -26,11 +26,10 @@ char *token_string(token_tag tag) {
 	case TOK_COLON: return ":";
 	case TOK_SEMICOLON: return ";";
 	case TOK_DOT: return ".";
-	case TOK_LET: return "let";
 	case TOK_NEVER: return "never";
 	case TOK_TYPE: return "type";
-	case TOK_FN: return "fn";
-	case TOK_FOREIGN: return "foreign";
+	case TOK_FUNC: return "func";
+	case TOK_VAR: return "var";
 	case TOK_THROW: return "throw";
 	case TOK_RETURN: return "return";
 	default: return "<unhandled>";

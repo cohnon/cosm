@@ -52,7 +52,7 @@ ast_type *parse_type(module *mod) {
 		break;
 
 	default:
-		SYNTAX_ERROR("expected type token");
+		SYNTAX_ERROR("expected type token, got %s", token_string(CUR.tag));
 	}
 
 	if (CUR.tag == TOK_ARROW) {
@@ -116,33 +116,6 @@ static ast_expr *parse_tuple(module *mod) {
 	return expr;
 }
 
-static ast_expr *parse_function_block(module *mod) {
-	ast_expr *expr = mem_alloc(&mod->alc, ast_expr);
-	expr->tag = EXPR_FUNCTION;
-
-	EAT(TOK_FN);
-
-	expr->fn.type = NULL;
-	if (CUR.tag != TOK_BRACE_OPEN) {
-		expr->fn.type = parse_type(mod);
-	}
-
-	expr->fn.body = parse_block(mod);
-
-	return expr;
-}
-
-static ast_expr *parse_foreign(module *mod) {
-	ast_expr *expr = mem_alloc(&mod->alc, ast_expr);
-	expr->tag = EXPR_FOREIGN;
-
-	EAT(TOK_FOREIGN);
-	EAT(TOK_STRING);
-	parse_type(mod);
-
-	return expr;
-}
-
 static ast_expr *parse_symbol(module *mod) {
 	ast_expr *expr = mem_alloc(&mod->alc, ast_expr);
 	expr->tag = EXPR_SYMBOL;
@@ -175,27 +148,10 @@ static ast_expr *parse_string(module *mod) {
 	return expr;
 }
 
-static bool cur_starts_expression(module *mod) {
-	switch (CUR.tag) {
-	case TOK_NUMBER:
-	case TOK_CHARACTER:
-	case TOK_STRING:
-	case TOK_BRACE_OPEN:
-	case TOK_PAREN_OPEN:
-	case TOK_FN:
-	case TOK_FOREIGN:
-	case TOK_SYMBOL: return true;
-	
-	default: return false;
-	}
-}
-
 static ast_expr *parse_primary_expression(module *mod) {
 	switch (CUR.tag) {
-	case TOK_FN: return parse_function_block(mod);
 	case TOK_BRACE_OPEN: return parse_block(mod);
 	case TOK_PAREN_OPEN: return parse_tuple(mod);
-	case TOK_FOREIGN: return parse_foreign(mod);
 	case TOK_SYMBOL: return parse_symbol(mod);
 	case TOK_NUMBER: return parse_number(mod);
 	case TOK_CHARACTER: return parse_character(mod);
@@ -220,48 +176,55 @@ static ast_operator parse_operator(module *mod) {
 static ast_expr *parse_expression_prec(module *mod, uint32 prec) {
 	ast_expr *lhs = parse_primary_expression(mod);
 
-    for (;;) {
-		// check application
-		if (cur_starts_expression(mod)) {
-			// a + f x + c
-			//      ^ f(x)
-			
-			if (OPERATOR_APPLICATION <= prec) break;
+	for (;;) {
+		// function call
+		if (CUR.tag == TOK_PAREN_OPEN) {
+			ast_expr *call_expr = mem_alloc(&mod->alc, ast_expr);
+			call_expr->tag = EXPR_CALL;
+			call_expr->call.callee = lhs;
+			array_init(&call_expr->call.args, 4);
 
-			ast_expr *op_expr = mem_alloc(&mod->alc, ast_expr);
-			op_expr->tag = EXPR_BINARY_OP;
-			op_expr->bin_op.op = OPERATOR_APPLICATION;
-			op_expr->bin_op.lhs = lhs;
-			op_expr->bin_op.rhs = parse_expression_prec(mod, OPERATOR_APPLICATION);
+			EAT(TOK_PAREN_OPEN);
 
-			lhs = op_expr;
+			while (CUR.tag != TOK_PAREN_CLOSE) {
+				ast_expr *arg = parse_expression(mod);
+				array_append(&call_expr->call.args, &arg);
+
+				if (CUR.tag != TOK_COMMA) break;
+
+				EAT(TOK_COMMA);
+			}
+
+			EAT(TOK_PAREN_CLOSE);
+
+			lhs = call_expr;
 
 			continue;
 		}
 
-        ast_operator op = parse_operator(mod);
+		ast_operator op = parse_operator(mod);
 
-        // no operator
-        if (op == OPERATOR_INVALID) break;
+		// no operator
+		if (op == OPERATOR_INVALID) break;
 
-        // if next operator doesn't exceed current precedence
-        // break out and wrap expression so far
-        // 1 + 2 + 3 * 4
-        //       ^ has same precedence so wrap previous expression (1 + 2)
-        if (op <= prec) break;
+		// if next operator doesn't exceed current precedence
+		// break out and wrap expression so far
+		// 1 + 2 + 3 * 4
+		//       ^ has same precedence so wrap previous expression (1 + 2)
+		if (op <= prec) break;
+		
+		EAT_ANY; // eat operator
+		
+		ast_expr *rhs = parse_expression_prec(mod, op);
+		
+		ast_expr *op_expr = mem_alloc(&mod->alc, ast_expr);
+		op_expr->tag = EXPR_BINARY_OP;
+		op_expr->bin_op.op = op;
+		op_expr->bin_op.lhs = lhs;
+		op_expr->bin_op.rhs = rhs;
 
-        EAT_ANY; // eat operator
-
-        ast_expr *rhs = parse_expression_prec(mod, op);
-
-        ast_expr *op_expr = mem_alloc(&mod->alc, ast_expr);
-        op_expr->tag = EXPR_BINARY_OP;
-        op_expr->bin_op.op = op;
-        op_expr->bin_op.lhs = lhs;
-        op_expr->bin_op.rhs = rhs;
-
-        lhs = op_expr;
-    }
+		lhs = op_expr;
+	}
 
 	return lhs;
 }
@@ -273,7 +236,7 @@ static ast_expr *parse_expression(module *mod) {
 static void parse_variable(module *mod, ast_item *item) {
 	item->tag = ITEM_VARIABLE;
 
-	EAT(TOK_LET);
+	EAT(TOK_VAR);
 	item->var.name = EAT_RET(TOK_SYMBOL);
 	
 	// type
@@ -290,11 +253,52 @@ static void parse_variable(module *mod, ast_item *item) {
 	}
 }
 
+static void parse_function(module *mod, ast_item *item) {
+	item->tag = ITEM_FUNCTION;
+
+	item->func.ret_type = NULL;
+	item->func.params = (param_list){0};
+	item->func.body = NULL;
+
+	EAT(TOK_FUNC);
+
+	item->func.name = EAT_RET(TOK_SYMBOL);
+
+	if (CUR.tag == TOK_PAREN_OPEN) {
+		array_init(&item->func.params, 4);
+		EAT(TOK_PAREN_OPEN);
+		while (CUR.tag != TOK_PAREN_CLOSE) {
+			ast_param param = {0};
+			param.name = EAT_RET(TOK_SYMBOL);
+			EAT(TOK_COLON);
+			param.type = parse_type(mod);
+
+			array_append(&item->func.params, &param);
+
+			if (CUR.tag != TOK_COMMA) break;
+
+			EAT(TOK_COMMA);
+		}
+
+		EAT(TOK_PAREN_CLOSE);
+
+		if (CUR.tag == TOK_ARROW) {
+			EAT(TOK_ARROW);
+			item->func.ret_type = parse_type(mod);
+		}
+	}
+
+	if (CUR.tag == TOK_BRACE_OPEN) {
+		item->func.body = parse_block(mod);
+	}
+}
+
 static ast_item *parse_item(module *mod) {
 	ast_item *item = mem_alloc(&mod->alc, ast_item);
 
 	switch (CUR.tag) {
-	case TOK_LET: parse_variable(mod, item); break;
+	case TOK_FUNC: parse_function(mod, item); break;
+	case TOK_VAR: parse_variable(mod, item); break;
 	default: SYNTAX_ERROR("expected top level item, got %s", token_string(CUR.tag));
 	}
 

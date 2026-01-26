@@ -1,7 +1,13 @@
-let putchar = foreign "putchar" uint32 -> int32
+func putchar (char: uint32) -> int32
 
-let main = fn {
-	putchar 'A';
+func add (lhs: int32, rhs: int32) -> int32
+{
+	a + b
+}
+
+func main ()
+{
+	putchar('A')
 }
 
 # cosm text
@@ -13,11 +19,14 @@ let main = fn {
 #   return
 
 # cosm binary
-# imports (name, type): [(0 0)]
-# exports (name, item): [(1 0)]
+# imports (name, type): [(putchar, 0)]
+# exports (name, sec, ref, extra): [(add, func, 0, nil) (main, func, 1, 0)]
+# exports_extra: [1 a 1 b 0]
 #
-# items (type, storage): [(3 0)]
+# funcs (type, code): [(5, N) (8, M)]
+# vars (type, data): []
+# types: [fn 1 uint32 1 int32 fn 0 0 fn 2 int32 int32 1 int32]
+#
 # code: [<bytecode>]
-# types: [fn uint32 int32 fn unit unit]
+# data: []
 #
-# strings: [7 putchar 4 main]
