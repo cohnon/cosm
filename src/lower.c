@@ -9,27 +9,49 @@
 	exit(EXIT_FAILURE); \
 } while(0)
 
-uint64 lower_type(module *mod, ast_type *type) {
+static uint64 lower_type(module *mod, ast_type *type) {
 	return 0;
 }
 
-uint64 lower_function_signature(module *mod, ast_item *item) {
+static uint64 lower_import(module *mod, token name, ast_type *type) {
 	return 0;
 }
 
-uint64 lower_function_body(module *mod, ast_item *item) {
+static uint64 lower_function_signature(module *mod, ast_item *item) {
+	byte_buffer *types_buf = &mod->bc.types;
+
+	uint64 ref = buf_push(types_buf, COSM_FUNC);
+
+	buf_push_varint(types_buf, item->func.in.len);
+	for (int i = 0; i < item->func.in.len; i++) {
+		lower_type(mod, item->func.in.items[i].type);
+	}
+
+	buf_push_varint(types_buf, item->func.out.len);
+	for (int i = 0; i < item->func.out.len; i++) {
+		lower_type(mod, item->func.out.items[i].type);
+	}
+
+	return ref;
+}
+
+static uint64 lower_function_body(module *mod, ast_item *item) {
 	return 0;
 }
 
-void lower_item(module *mod, ast_item *item) {
+static void lower_item(module *mod, ast_item *item) {
 	switch (item->tag) {
 	case ITEM_FUNCTION: {
 		uint64 type_ref = lower_function_signature(mod, item);
-		if (item->func.body != NULL) {
-			uint64 code_ref = lower_function_body(mod, item);
-			buf_push_varint(&mod->bc.funcs, type_ref);
-			buf_push_varint(&mod->bc.funcs, code_ref);
+		// import
+		if (item->func.body == NULL) {
+			lower_import(mod, item->func.ty);
+			break;
 		}
+		
+		uint64 code_ref = lower_function_body(mod, item);
+		buf_push_varint(&mod->bc.funcs, type_ref);
+		buf_push_varint(&mod->bc.funcs, code_ref);
 		break;
 	}
 

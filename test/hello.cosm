@@ -5,7 +5,7 @@ func add (lhs: int32, rhs: int32) -> int32
 	a + b
 }
 
-func main ()
+func main
 {
 	putchar('A')
 }
@@ -20,7 +20,7 @@ func main ()
 
 # cosm binary
 # imports (name, type): [(putchar, 0)]
-# exports (name, sec, ref, extra): [(add, func, 0, nil) (main, func, 1, 0)]
+# exports (sect, name, ref, extra?): [(func, main, 1)]
 # exports_extra: [1 a 1 b 0]
 #
 # funcs (type, code): [(5, N) (8, M)]

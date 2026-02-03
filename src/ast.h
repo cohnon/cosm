@@ -32,8 +32,8 @@ struct ast_type {
 		} slc;
 
 		struct {
-			ast_type *in;
-			ast_type *out;
+			type_list in;
+			type_list out;
 		} fn;
 
 		type_list tup;
@@ -46,6 +46,7 @@ typedef enum {
 	// order defines the precedence
 	OPERATOR_ADDITION,
 	OPERATOR_MULTIPLICATION,
+	OPERATOR_APPLICATION,
 } ast_operator;
 
 char *operator_string(ast_operator op);
@@ -109,14 +110,19 @@ typedef struct {
 	union {
 		struct {
 			token name;
-			param_list params;
-			ast_type *ret_type;
+			param_list in;
+			param_list out;
 			ast_expr *body;
+
+			uint64 ty;
 		} func;
+
 		struct {
 			token name;
 			ast_type *type;
 			ast_expr *val;
+
+			uint64 ty;
 		} var;
 	};
 } ast_item;

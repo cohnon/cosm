@@ -19,11 +19,12 @@ typedef enum {
 	COSM_FLOAT32,
 	COSM_FLOAT64,
 
-	COSM_FN,
+	COSM_FUNC,
 	COSM_TUPLE,
 	COSM_UNION,
 
 	COSM_TYPE,
+	COSM_FLAGS,
 } bc_type;
 
 typedef struct {
